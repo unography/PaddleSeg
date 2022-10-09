@@ -9,6 +9,7 @@ English | [简体中文](README_cn.md)
 - 4 Quick Start
 - 5 Training and Finetuning
 - 6 Deployment
+- 7 HuggingFace Hub Support
 
 
 ## 1 Introduction
@@ -419,3 +420,68 @@ Deployment on web, refer to [doc](../../docs/deployment/web/web.md).
 <p align="center">
 <img src="https://user-images.githubusercontent.com/10822846/118273079-127bf480-b4f6-11eb-84c0-8a0bbc7c7433.png"  height="200">
 </p>
+
+## 7 HuggingFace Hub Support
+
+The project now supports adding models to the [HuggingFace Hub](https://huggingface.co/models), which makes it even easier to share models and datasets.
+
+The utility file for this is `src/hf_hub.py` (NOTE: You need to be logged in with `huggingface-cli login` to run the code)
+
+As an example, to share the **PP-HumanSegV2-Lite** model, assuming `portrait_pp_humansegv2_lite_256x144_inference_model_with_softmax` is downloaded locally, you can run - 
+
+1. Create repo in HuggingFace Hub
+
+```bash
+python src/hf_hub.py repo create <YOUR-HF-USERNAME>/<project-name>
+```
+
+Example:
+```bash
+python src/hf_hub.py repo create unography/PP-HumanSegV2-Lite
+```
+
+This creates a repo with name `PP-HumanSegV2-Lite` for the username `unography`
+
+2. Upload local folder to the created repo
+```bash
+python src/hf_hub.py commit folder <YOUR-HF-USERNAME>/<project-name> <LOCAL-PATH> --path-in-repo <OPTIONAL-PATH>
+```
+
+Example:
+```bash
+python src/hf_hub.py commit folder unography/PP-HumanSegV2-Lite models/portrait_pp_humansegv2_lite_256x144_inference_model_with_softmax --path-in-repo portrait_pp_humansegv2_lite_256x144_inference_model_with_softmax 
+```
+
+More files/folders can be commited to the same repo. For example, if we now downloaded another version of the same model, e.g. `portrait_pp_humansegv2_lite_256x144_inference_model` - which is the argmax version of the model, we can now upload this to the same repo as - 
+
+```bash
+python src/hf_hub.py commit folder unography/PP-HumanSegV2-Lite models/portrait_pp_humansegv2_lite_256x144_inference_model --path-in-repo portrait_pp_humansegv2_lite_256x144_inference_model
+```
+
+The repo was already created, so we don't need to create it again.
+
+Once uploaded, the models can be shared, and downloaded like - 
+
+```python
+from huggingface_hub import hf_hub_download
+from typing import Dict
+
+def get_model_paths() -> Dict:
+    files_to_download = [
+        "deploy.yaml",
+        "model.pdiparams",
+        "model.pdiparams.info",
+        "model.pdmodel",
+    ]
+    file_paths = {}
+    for filename in files_to_download:
+        file_paths[filename] = hf_hub_download(
+            repo_id="unography/PP-HumanSegV2-Lite",
+            subfolder="portrait_pp_humansegv2_lite_256x144_inference_model_with_softmax",
+            filename=filename,
+        )
+    return file_paths
+
+```
+
+Calling the `get_model_paths` function returns a dictionary which has the local path of each of the downloaded files.
